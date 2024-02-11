@@ -34,7 +34,7 @@ class Program
 
                     publisher.PublishAsync(channelName, deviceTemp.ToString(), CommandFlags.FireAndForget);
                     Console.WriteLine($"Lectura de temperatura para {device}: {deviceTemp}");
-                    Thread.Sleep(1000);
+                    Thread.Sleep(500);
                 }
             }
         }
