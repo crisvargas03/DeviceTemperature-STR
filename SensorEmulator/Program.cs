@@ -27,6 +27,7 @@ class Program
         {
             var random = new Random();
             var publisher = connection.GetSubscriber();
+            var startTime = DateTime.Now;
 
             while (true)
             {
@@ -35,13 +36,18 @@ class Program
                     if (exitRequested)
                         return;
 
-                    double deviceTemp = random.Next(40, 70) + random.NextDouble();
-                    deviceTemp = Math.Round(deviceTemp, 2);
+                    double elapsedTime = (DateTime.Now - startTime).TotalSeconds;
+
+                    // Simular fluctuación realista utilizando una función senoidal
+                    double fluctuation = Math.Sin(elapsedTime * 0.1) * 5;
+                    double baseTemperature = random.Next(40, 70) + random.NextDouble();
+                    double deviceTemp = Math.Round(baseTemperature + fluctuation, 2);
+
                     string channelName = $"ch:{device}";
 
+                    Thread.Sleep(1000);
                     publisher.PublishAsync(channelName, deviceTemp.ToString(), CommandFlags.FireAndForget);
                     Console.WriteLine($"Lectura de temperatura para {device}: {deviceTemp}");
-                    Thread.Sleep(500);
                 }
             }
         }
