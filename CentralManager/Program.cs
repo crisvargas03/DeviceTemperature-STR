@@ -2,27 +2,33 @@
 
 class Program
 {
-    private static List<double> temperatures = new();
-    private static SemaphoreSlim semaphore = new(1);
+    private static List<double> temperatures = new List<double>();
+    private static SemaphoreSlim semaphore = new SemaphoreSlim(4); // temperaturas
     private static bool exitRequested = false;
 
+    [Obsolete]
     static void Main()
     {
-        try
-        {
-            Console.Write("Ingrese el nombre del equipo que desea monitorear: ");
-            string deviceName = Console.ReadLine();
+        Console.Write("Ingrese el nombre del equipo que desea monitorear: ");
+        string deviceName = Console.ReadLine();
 
-            using var connection = ConnectionMultiplexer.Connect("localhost");
+        using (var connection = ConnectionMultiplexer.Connect("localhost"))
+        {
             var subscriber = connection.GetSubscriber();
-            subscriber.Subscribe($"ch:{deviceName}", (RedisChannel, value) =>
+            var channel = $"ch:{deviceName}";
+
+            subscriber.Subscribe(channel, (RedisChannel, value) =>
             {
                 try
                 {
                     double temperatura = double.Parse(value);
                     Console.WriteLine($"Temperatura recibida para {deviceName}: {temperatura}");
 
-                    semaphore.Wait();
+                    semaphore.Wait(2000);
+
+                    if (exitRequested)
+                        return;
+
                     temperatures.Add(temperatura);
                     ShowAnalytics();
                 }
@@ -39,10 +45,8 @@ class Program
             Console.WriteLine($"Sistema central esperando lecturas de temperatura para {deviceName}...");
             Console.ReadLine();
         }
-        finally
-        {
-            exitRequested = true;
-        }
+
+        exitRequested = true;
     }
 
     private static void ShowAnalytics()

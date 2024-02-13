@@ -4,9 +4,13 @@ class Program
 {
     private const string RedisConnectionString = "localhost:6379";
     private static ConnectionMultiplexer connection = ConnectionMultiplexer.Connect(RedisConnectionString);
+    private static bool exitRequested = false;
+
+    [Obsolete]
     static void Main()
     {
         List<string> devices = [];
+
         Console.WriteLine("Registro de Equipos (Ingrese 'exit' para finalizar el registro):");
 
         while (true)
@@ -14,8 +18,7 @@ class Program
             Console.Write("Ingrese el nombre del equipo (o 'exit' para salir): ");
             string newDevice = Console.ReadLine();
 
-            if (string.IsNullOrEmpty(newDevice)) break;
-            if (newDevice == "exit") break;
+            if (string.IsNullOrEmpty(newDevice) || newDevice == "exit") break;
 
             devices.Add(newDevice);
         }
@@ -24,10 +27,14 @@ class Program
         {
             var random = new Random();
             var publisher = connection.GetSubscriber();
+
             while (true)
             {
-                foreach(var device in devices)
+                foreach (var device in devices)
                 {
+                    if (exitRequested)
+                        return;
+
                     double deviceTemp = random.Next(40, 70) + random.NextDouble();
                     deviceTemp = Math.Round(deviceTemp, 2);
                     string channelName = $"ch:{device}";
@@ -38,6 +45,7 @@ class Program
                 }
             }
         }
-        return;      
+
+        connection.Close();
     }
 }
